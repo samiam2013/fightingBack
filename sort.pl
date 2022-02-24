@@ -9,12 +9,19 @@ use Data::Dumper;
 use List::MoreUtils; # cpan install List::MoreUtils
 use URI::Query; # cpan install URI::Query
 
-my $verbose;
-GetOptions("verbose"  => \$verbose);
+my ($verbose, $input_path, $output_path, $proxy_host, $proxy_port) = (
+    0,
+    './http_exploit_requests.log',
+    './honeypost_nginx.conf',
+    '127.0.0.1', 
+    7886 );
+GetOptions("verbose"  => \$verbose, 
+            "input|i=s" => \$input_path,
+            "output|o=s" => \$output_path,
+            "host=s" => \$proxy_host,
+            "port=s" => \$proxy_port);
 
-# expecting to find this file in the same directory
-my $file_path = './http_exploit_requests.log';
-open my $requests_fh, $file_path or die "Could not open $file_path: $!";
+open my $requests_fh, $input_path or die "Could not open $input_path: $!";
 
 my @requests = [];
 while (my $line = <$requests_fh>) {
@@ -68,18 +75,18 @@ for my $path (@request_paths) {
     }
 } 
 
-# null in ascii 78, 86, 76, 76
-my $HONEY_PORT = 7886;
-my $HONEY_HOST = 'http://127.0.0.1';
 
 my $nginx_config = '';
 for my $pattern (@patterns){
     $nginx_config .= "location ~* ^/$pattern/ {\n";
     $nginx_config .= "\t# auto generated proxy to honeypot\n";
-    $nginx_config .= "\tproxy_pass $HONEY_HOST:$HONEY_PORT\$request_uri;\n";
+    $nginx_config .= "\tproxy_pass http://$proxy_host:$proxy_port\$request_uri;\n";
     $nginx_config .= "}\n\n";
 }
 
-print STDOUT "\n$nginx_config";
+print STDOUT "attempting to print config to $output_path\n$nginx_config" if $verbose;
+open NGINX_CONF, '>', $output_path or die $!;
+print NGINX_CONF $nginx_config;
+close NGINX_CONF;
 
 exit;
