@@ -1,7 +1,9 @@
 #!/usr/bin/perl
+
 use strict;
 use warnings;
 use diagnostics;
+
 use Getopt::Long;
 use Data::Dumper;
 use List::MoreUtils; # cpan install List::MoreUtils
@@ -57,14 +59,27 @@ for my $path (@request_paths) {
     for my $pattern (@patterns) {
         if (lc $path =~ /^\/$pattern.*/ ) {
             $matched = 1;
-            # this line needs to be kept in lockstep with the abover
+            # this line needs to be kept in lockstep with the above regex
             print STDOUT "path $path  matched pattern /^\\/$pattern.*/ matched\n" if $verbose;
         }
     }
     unless ($matched) {
-        print STDOUT "path '$path' not matched by any pattern\n" if $verbose;
+        print STDOUT "path '$path' not matched by any pattern\n"; #if $verbose;
     }
 } 
 
+# null in ascii 78, 86, 76, 76
+my $HONEY_PORT = 7886;
+my $HONEY_HOST = 'http://127.0.0.1';
+
+my $nginx_config = '';
+for my $pattern (@patterns){
+    $nginx_config .= "location ~* ^/$pattern/ {\n";
+    $nginx_config .= "\t# auto generated proxy to honeypot\n";
+    $nginx_config .= "\tproxy_pass $HONEY_HOST:$HONEY_PORT\$request_uri;\n";
+    $nginx_config .= "}\n\n";
+}
+
+print STDOUT "\n$nginx_config";
 
 exit;
