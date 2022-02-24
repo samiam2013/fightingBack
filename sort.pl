@@ -12,25 +12,27 @@ use URI::Query; # cpan install URI::Query
 my ($verbose, $input_path, $output_path, $proxy_host, $proxy_port) = (
     0,
     './http_exploit_requests.log',
-    './honeypost_nginx.conf',
+    './honeypot_nginx.conf',
     '127.0.0.1', 
     7886 );
-GetOptions("verbose"  => \$verbose, 
+GetOptions("verbose|v"  => \$verbose, 
             "input|i=s" => \$input_path,
             "output|o=s" => \$output_path,
-            "host=s" => \$proxy_host,
-            "port=s" => \$proxy_port);
+            "host|h=s" => \$proxy_host,
+            "port|s=s" => \$proxy_port);
 
-open my $requests_fh, $input_path or die "Could not open $input_path: $!";
+open REQUESTS, $input_path or die "Could not open $input_path: $!";
 
-my @requests = [];
-while (my $line = <$requests_fh>) {
+my @requests = ();
+while (my $line = <REQUESTS>) {
     if ($line =~ /GET\s([^\s]+)/) {
         my $request = $1; # first matching group from latest regex compare
         #print STDOUT "request: $request\n" if $verbose;
         push @requests, $request;
     }
 }
+
+close REQUESTS;
 
 @requests = sort @requests;
 @requests = List::MoreUtils::uniq @requests;
@@ -78,10 +80,11 @@ for my $path (@request_paths) {
 
 my $nginx_config = '';
 for my $pattern (@patterns){
-    $nginx_config .= "location ~* ^/$pattern/ {\n";
-    $nginx_config .= "\t# auto generated proxy to honeypot\n";
-    $nginx_config .= "\tproxy_pass http://$proxy_host:$proxy_port\$request_uri;\n";
-    $nginx_config .= "}\n\n";
+    $nginx_config .= 
+        "location ~* ^/$pattern/ {\n"
+        ."\t# auto generated proxy to honeypot\n"
+        ."\tproxy_pass http://$proxy_host:$proxy_port\$request_uri;\n"
+        ."}\n\n";
 }
 
 print STDOUT "attempting to print config to $output_path\n$nginx_config" if $verbose;
