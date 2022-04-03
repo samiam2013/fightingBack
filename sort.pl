@@ -9,17 +9,33 @@ use Data::Dumper;
 use List::MoreUtils; # cpan install List::MoreUtils
 use URI::Query; # cpan install URI::Query
 
-my ($verbose, $input_path, $output_path, $proxy_host, $proxy_port) = (
+my ($verbose, $input_path, $output_path, $proxy_host, $proxy_port, $help) = (
     0,
     './http_exploit_requests.log',
     './honeypot_nginx.conf',
     '127.0.0.1', 
-    7886 );
+    7886, 
+    0 );
 GetOptions("verbose|v"  => \$verbose, 
             "input|i=s" => \$input_path,
             "output|o=s" => \$output_path,
-            "host|h=s" => \$proxy_host,
-            "port|s=s" => \$proxy_port);
+            "hostname|n=s" => \$proxy_host,
+            "port|s=s" => \$proxy_port,
+            "help|h" => \$help);
+
+usage() if $help;
+
+sub usage {
+    print STDOUT <<EOM
+this script is for testing a set of regular expressions for use in nginx configs for pugnasAres
+    -i --input <log_path> ........ [REQUIRED] nginx log input path
+    -o --output <output path> .... [REQUIRED] config output path
+    -n --hostname <hostname> ..... [REQUIRED] host the reverse proxy should point at
+    -p --port <#..#> ............. [REQUIRED] port the server is listening on
+    -v --verbose ................. more descriptive output
+    -h --help .................... get this prompt
+EOM
+}
 
 open REQUESTS, $input_path or die "Could not open $input_path: $!";
 
