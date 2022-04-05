@@ -75,7 +75,7 @@ for my $request (@requests){
 print STDOUT Data::Dumper::Dumper \@request_paths if $verbose;
 
 my @patterns = (
-    '(my)?admin(\/(db|index|pma|phpmyadimin|sqladmin|web)|istrator\/(pma|admin|php))?',
+    '(my)?admin(\/(db|index|pma|phpmyadmin|sqladmin|web)|istrator\/(pma|admin|php))?',
     '(pma|(_|[\d])?php|database|(shop)?db|(my)?sql|xmlrpc)',
 );
 
